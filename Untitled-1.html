@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>众湾垂钓园钓场</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#722ED1',
+                        success: '#00B42A',
+                        warning: '#FF7D00',
+                        danger: '#F53F3F',
+                        gray: {
+                            100: '#F2F3F5',
+                            200: '#E5E6EB',
+                            300: '#C9CDD4',
+                            400: '#86909C',
+                            500: '#4E5969',
+                            600: '#272E3B',
+                            700: '#1D2129',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['PingFang SC', 'Helvetica Neue', 'Arial', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            }
+            .transition-custom {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .grid-cols-5-auto {
+                grid-template-columns: repeat(5, minmax(0, auto));
+            }
+            .grid-cols-3-auto {
+                grid-template-columns: repeat(3, minmax(0, auto));
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans text-gray-700">
+    <!-- 主容器 -->
+    <div class="max-w-md mx-auto bg-white min-h-screen">
+        <!-- 头部标题 -->
+        <header class="bg-primary text-white py-4 px-6 shadow-md">
+            <h1 class="text-xl font-bold text-center">众湾垂钓园钓场</h1>
+        </header>
+
+        <!-- 主内容区域 -->
+        <main class="p-4">
+            <!-- 首页视图 -->
+            <div id="home-view" class="space-y-6">
+                <!-- 输入区域 -->
+                <section class="bg-white rounded-xl p-4 shadow-md space-y-4">
+                    <h2 class="text-lg font-semibold text-gray-700 border-b pb-2">创建钓位</h2>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">座位号</label>
+                            <input type="number" id="seat-number" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-custom">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">付款情况</label>
+                            <select id="payment-status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-custom">
+                                <option value="unpaid">未付款</option>
+                                <option value="paid">已付款</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">开始时间</label>
+                            <input type="datetime-local" id="start-time" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-custom">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">垂钓时间 (小时)</label>
+                            <input type="number" id="fishing-duration" min="1" step="0.5" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-custom">
+                        </div>
+                        <button id="add-seat-btn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-custom flex items-center justify-center gap-2">
+                            <i class="fa fa-plus"></i> 添加钓位
+                        </button>
+                    </div>
+                </section>
+
+                <!-- 预定座位展示 -->
+                <section class="bg-white rounded-xl p-4 shadow-md space-y-4">
+                    <h2 class="text-lg font-semibold text-gray-700 border-b pb-2">预定座位</h2>
+                    <div class="grid grid-cols-3 gap-3" id="booking-grid">
+                        <!-- 小卡片将由JavaScript动态填充 -->
+                    </div>
+                </section>
+
+                <!-- 历史记录栏 -->
+                <section class="bg-white rounded-xl p-4 shadow-md space-y-4">
+                    <h2 class="text-lg font-semibold text-gray-700 border-b pb-2">历史记录</h2>
+                    <div class="grid grid-cols-5 gap-2" id="history-grid">
+                        <!-- 20个空格，一排5个，共4列 -->
+                        <!-- 将由JavaScript动态填充 -->
+                    </div>
+                </section>
+            </div>
+
+            <!-- 垂钓详情页 -->
+            <div id="detail-view" class="hidden space-y-6">
+                <button id="back-btn" class="flex items-center gap-2 text-primary font-medium mb-4">
+                    <i class="fa fa-arrow-left"></i> 返回
+                </button>
+
+                <section class="bg-white rounded-xl p-4 shadow-md space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-xl font-bold text-gray-700">座位号: <span id="detail-seat-number" class="text-primary">0</span></h2>
+                            <button id="edit-seat-btn" class="text-gray-500 hover:text-primary"><i class="fa fa-edit"></i></button>
+                        </div>
+                        <span id="detail-status-badge" class="px-3 py-1 rounded-full text-sm font-medium bg-warning/10 text-warning">进行中</span>
+                    </div>
+
+                    <!-- 金额数据展示栏 -->
+                    <div class="grid grid-cols-2 gap-3 my-4">
+                        <div class="bg-gray-50 p-3 rounded-lg text-center">
+                            <p class="text-xs text-gray-500">总重量</p>
+                            <p id="total-weight" class="text-lg font-bold text-primary">0 kg</p>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded-lg text-center">
+                            <p class="text-xs text-gray-500">回鱼金额</p>
+                            <p id="return-amount" class="text-lg font-bold text-secondary">¥0</p>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded-lg text-center">
+                            <p class="text-xs text-gray-500">物品金额</p>
+                            <p id="item-amount" class="text-lg font-bold text-warning">¥0</p>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded-lg text-center">
+                            <p class="text-xs text-gray-500">返还金额</p>
+                            <p id="refund-amount" class="text-lg font-bold text-success">¥0</p>
+                        </div>
+                    </div>
+
+                    <!-- 时间和付款状态 -->
+                    <div class="space-y-3 mt-4">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">开始时间</label>
+                                <input type="datetime-local" id="detail-start-time" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-custom">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">结束时间</label>
+                                <input type="datetime-local" id="detail-end-time" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-custom">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">垂钓时长 (小时)</label>
+                                <input type="number" id="detail-duration" min="1" step="0.5" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-custom">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">付款状态</label>
+                                <select id="detail-payment-status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-custom">
+                                    <option value="unpaid">未付款</option>
+                                    <option value="paid">已付款</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 回鱼和物品添加区 -->
+                    <div class="grid grid-cols-1 gap-4 mt-6">
+                        <div class="space-y-2">
+                            <h3 class="text-sm font-medium text-gray-700">回鱼重量</h3>
+                            <div class="flex gap-2">
+                            <input type="number" id="fish-weight" step="0.01" min="0" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-custom">
+                            <button id="add-fish-btn" class="bg-primary hover:bg-primary/90 text-white px-3 py-2 rounded-lg transition-custom whitespace-nowrap">
+                                <i class="fa fa-plus"></i>
+                            </button>
+                        </div>
+                        </div>
+                        <div class="space-y-2">
+                            <h3 class="text-sm font-medium text-gray-700">其他物品</h3>
+                            <div class="flex gap-2">
+                            <input type="number" id="item-price" step="0.01" min="0" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-custom">
+                            <button id="add-item-btn" class="bg-secondary hover:bg-secondary/90 text-white px-3 py-2 rounded-lg transition-custom whitespace-nowrap">
+                                <i class="fa fa-plus"></i>
+                            </button>
+                        </div>
+                        </div>
+                    </div>
+
+                    <!-- 记录查看区 -->
+                    <div class="grid grid-cols-2 gap-4 mt-6">
+                        <div>
+                            <button id="view-fish-btn" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-custom flex items-center justify-center gap-2">
+                                <i class="fa fa-fish"></i> 查看回鱼记录
+                            </button>
+                        </div>
+                        <div>
+                            <button id="view-item-btn" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-custom flex items-center justify-center gap-2">
+                                <i class="fa fa-shopping-cart"></i> 查看物品记录
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 回鱼按钮 -->
+                    <button id="return-fish-btn" class="w-full bg-success hover:bg-success/90 text-white font-medium py-3 px-4 rounded-lg transition-custom mt-6 flex items-center justify-center gap-2">
+                        <i class="fa fa-check-circle"></i> 确认回鱼
+                    </button>
+                </section>
+            </div>
+
+            <!-- 记录查看弹窗 -->
+            <div id="record-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+                <div class="bg-white rounded-xl p-4 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4 pb-2 border-b">
+                        <h3 id="modal-title" class="text-lg font-semibold text-gray-700">回鱼记录</h3>
+                        <button id="close-modal" class="text-gray-500 hover:text-gray-700"><i class="fa fa-times"></i></button>
+                    </div>
+                    <div id="modal-content" class="space-y-3">
+                        <!-- 记录内容将由JavaScript动态填充 -->
+                    </div>
+                    <div class="mt-4 pt-2 border-t flex justify-end gap-2">
+                        <button id="confirm-delete" class="px-4 py-2 bg-danger hover:bg-danger/90 text-white rounded-lg transition-custom hidden">确认删除</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 数据模型
+        const data = {
+            bookings: [], // 预定座位数据
+            history: [], // 历史记录数据
+            currentSeat: null, // 当前查看的座位
+            selectedRecordId: null, // 当前选中的记录ID（用于删除）
+            fishPricePerKg: 5 // 每公斤鱼的价格
+        };
+
+        // DOM元素
+        const elements = {
+            homeView: document.getElementById('home-view'),
+            detailView: document.getElementById('detail-view'),
+            recordModal: document.getElementById('record-modal'),
+            // 首页元素
+            seatNumber: document.getElementById('seat-number'),
+            paymentStatus: document.getElementById('payment-status'),
+            startTime: document.getElementById('start-time'),
+            fishingDuration: document.getElementById('fishing-duration'),
+            addSeatBtn: document.getElementById('add-seat-btn'),
+            historyGrid: document.getElementById('history-grid'),
+            bookingGrid: document.getElementById('booking-grid'),
+            // 详情页元素
+            backBtn: document.getElementById('back-btn'),
+            detailSeatNumber: document.getElementById('detail-seat-number'),
+            editSeatBtn: document.getElementById('edit-seat-btn'),
+            detailStatusBadge: document.getElementById('detail-status-badge'),
+            totalWeight: document.getElementById('total-weight'),
+            returnAmount: document.getElementById('return-amount'),
+            itemAmount: document.getElementById('item-amount'),
+            refundAmount: document.getElementById('refund-amount'),
+            detailStartTime: document.getElementById('detail-start-time'),
+            detailEndTime: document.getElementById('detail-end-time'),
+            detailDuration: document.getElementById('detail-duration'),
+            detailPaymentStatus: document.getElementById('detail-payment-status'),
+            fishWeight: document.getElementById('fish-weight'),
+            addFishBtn: document.getElementById('add-fish-btn'),
+            itemPrice: document.getElementById('item-price'),
+            addItemBtn: document.getElementById('add-item-btn'),
+            viewFishBtn: document.getElementById('view-fish-btn'),
+            viewItemBtn: document.getElementById('view-item-btn'),
+            returnFishBtn: document.getElementById('return-fish-btn'),
+            // 弹窗元素
+            modalTitle: document.getElementById('modal-title'),
+            modalContent: document.getElementById('modal-content'),
+            closeModal: document.getElementById('close-modal'),
+            confirmDelete: document.getElementById('confirm-delete')
+        };
+
+        // 初始化时间为当前时间
+        function initDateTime() {
+            const now = new Date();
+            // 格式化时间为datetime-local输入格式
+            const formattedNow = now.toISOString().slice(0, 16);
+            elements.startTime.value = formattedNow;
+            elements.detailStartTime.value = formattedNow;
+
+            // 设置默认垂钓时长为5小时
+            elements.fishingDuration.value = 5;
+            elements.detailDuration.value = 5;
+
+            // 计算结束时间
+            const endTime = new Date(now.getTime() + 5 * 60 * 60 * 1000);
+            elements.detailEndTime.value = endTime.toISOString().slice(0, 16);
+        }
+
+        // 生成唯一ID
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        // 创建新钓位
+        function createSeat() {
+            const seatNumber = parseInt(elements.seatNumber.value);
+            const paymentStatus = elements.paymentStatus.value;
+            const startTime = elements.startTime.value;
+            const duration = parseFloat(elements.fishingDuration.value);
+
+            // 验证输入
+            if (!seatNumber || !startTime || !duration) {
+                alert('请填写完整信息');
+                return;
+            }
+
+            // 检查座位号是否已存在
+            const existingSeat = data.bookings.find(booking => booking.seatNumber === seatNumber);
+            if (existingSeat) {
+                alert('该座位号已存在');
+                return;
+            }
+
+            // 计算结束时间
+            const start = new Date(startTime);
+            const end = new Date(start.getTime() + duration * 60 * 60 * 1000);
+            const endTime = end.toISOString().slice(0, 16);
+
+            // 创建新座位
+            const newSeat = {
+                id: generateId(),
+                seatNumber,
+                paymentStatus,
+                startTime,
+                endTime,
+                duration,
+                status: 'ongoing', // ongoing 或 completed
+                fishRecords: [],
+                itemRecords: []
+            };
+
+            // 添加到数据
+            data.bookings.push(newSeat);
+
+            // 清空输入
+            elements.seatNumber.value = '';
+            elements.paymentStatus.value = 'unpaid';
+            elements.fishingDuration.value = 3;
+            const now = new Date();
+            elements.startTime.value = now.toISOString().slice(0, 16);
+
+            // 更新UI
+            renderBookingGrid();
+
+            // 自动跳转到详情页
+            data.currentSeat = newSeat;
+            showDetailView();
+        }
+
+        // 渲染预定座位网格
+        function renderBookingGrid() {
+            elements.bookingGrid.innerHTML = '';
+
+            data.bookings.forEach(booking => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-lg border border-gray-200 p-3 shadow-sm hover:shadow-md transition-custom cursor-pointer';
+                card.dataset.id = booking.id;
+
+                // 计算总重量
+                const totalWeight = booking.fishRecords.reduce((sum, record) => sum + record.weight, 0);
+                // 计算回鱼金额
+                const returnAmount = totalWeight * data.fishPricePerKg;
+                // 计算物品金额
+                const itemAmount = booking.itemRecords.reduce((sum, record) => sum + record.price, 0);
+                // 计算返还金额
+                const refundAmount = returnAmount - itemAmount;
+
+                card.innerHTML = `
+                    <div class="space-y-1 mb-2">
+                        <div class="flex justify-between items-center">
+                            <span class="font-semibold text-primary">${booking.seatNumber}</span>
+                            <span class="text-xs px-2 py-0.5 rounded-full ${booking.paymentStatus === 'paid' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}">
+                                ${booking.paymentStatus === 'paid' ? '已付款' : '未付款'}
+                            </span>
+                        </div>
+                        <div class="text-xs text-gray-500">开始: ${formatDateTime(booking.startTime)}</div>
+                        <div class="text-xs text-gray-500">结束: ${formatDateTime(booking.endTime)}</div>
+                        <div class="text-xs ${booking.status === 'completed' ? 'text-danger' : 'text-gray-500'}">
+                    ${booking.status === 'completed' ? '已结束' : '进行中'}
+                </div>
+                    </div>
+                    <div class="space-y-1 pt-2 border-t border-gray-100">
+                        <div class="text-xs text-gray-500">总重量: <span class="font-medium text-gray-700">${totalWeight.toFixed(2)} kg</span></div>
+                        <div class="text-xs text-gray-500">回鱼金额: <span class="font-medium text-secondary">¥${returnAmount.toFixed(2)}</span></div>
+                        <div class="text-xs text-gray-500">物品金额: <span class="font-medium text-warning">¥${itemAmount.toFixed(2)}</span></div>
+                        <div class="text-xs text-gray-500">返还金额: <span class="font-medium text-success">¥${refundAmount.toFixed(2)}</span></div>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => {
+                    data.currentSeat = booking;
+                    showDetailView();
+                });
+
+                elements.bookingGrid.appendChild(card);
+            });
+        }
+
+        // 渲染历史记录网格
+        function renderHistoryGrid() {
+            elements.historyGrid.innerHTML = '';
+
+            // 按座位号排序
+            const sortedHistory = [...data.history].sort((a, b) => a.seatNumber - b.seatNumber);
+
+            // 填充历史记录
+            sortedHistory.forEach(record => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'bg-primary/10 text-primary rounded-lg p-2 text-center font-medium hover:bg-primary/20 transition-custom cursor-pointer';
+                historyItem.textContent = record.seatNumber;
+                historyItem.dataset.id = record.id;
+
+                historyItem.addEventListener('click', () => {
+                    // 查找对应的历史记录
+                    const booking = data.history.find(b => b.id === record.id);
+                    if (booking) {
+                        data.currentSeat = booking;
+                        showDetailView();
+                    }
+                });
+
+                // 添加长按删除事件
+                let pressTimer;
+                historyItem.addEventListener('mousedown', () => {
+                    pressTimer = setTimeout(() => {
+                        if (confirm('确定要删除这条记录吗？')) {
+                            data.history = data.history.filter(b => b.id !== record.id);
+                            renderHistoryGrid();
+                        }
+                    }, 1000);
+                });
+
+                historyItem.addEventListener('mouseup', () => {
+                    clearTimeout(pressTimer);
+                });
+
+                historyItem.addEventListener('mouseleave', () => {
+                    clearTimeout(pressTimer);
+                });
+
+                elements.historyGrid.appendChild(historyItem);
+            });
+
+            // 填充剩余空格
+            const remainingSpaces = 20 - sortedHistory.length;
+            for (let i = 0; i < remainingSpaces; i++) {
+                const emptyItem = document.createElement('div');
+                emptyItem.className = 'bg-gray-100 rounded-lg p-2 text-center text-gray-300';
+                emptyItem.textContent = '-';
+                elements.historyGrid.appendChild(emptyItem);
+            }
+        }
+
+        // 显示详情页
+        function showDetailView() {
+            if (!data.currentSeat) return;
+
+            const seat = data.currentSeat;
+
+            // 更新详情页数据
+            elements.detailSeatNumber.textContent = seat.seatNumber;
+            elements.detailStatusBadge.textContent = seat.status === 'completed' ? '已结束' : '进行中';
+            elements.detailStatusBadge.className = `px-3 py-1 rounded-full text-sm font-medium ${seat.status === 'completed' ? 'bg-danger/10 text-danger' : 'bg-warning/10 text-warning'}`;
+            elements.detailStartTime.value = seat.startTime;
+            elements.detailEndTime.value = seat.endTime;
+            elements.detailDuration.value = seat.duration;
+            elements.detailPaymentStatus.value = seat.paymentStatus;
+
+            // 计算并更新金额信息
+            updateAmountInfo();
+
+            // 切换视图
+            elements.homeView.classList.add('hidden');
+            elements.detailView.classList.remove('hidden');
+        }
+
+        // 返回首页
+        function goBack() {
+            elements.detailView.classList.add('hidden');
+            elements.homeView.classList.remove('hidden');
+            renderBookingGrid();
+            renderHistoryGrid();
+        }
+
+        // 更新金额信息
+        function updateAmountInfo() {
+            if (!data.currentSeat) return;
+
+            const seat = data.currentSeat;
+
+            // 计算总重量
+            const totalWeight = seat.fishRecords.reduce((sum, record) => sum + record.weight, 0);
+            // 计算回鱼金额
+            const returnAmount = totalWeight * data.fishPricePerKg;
+            // 计算物品金额
+            const itemAmount = seat.itemRecords.reduce((sum, record) => sum + record.price, 0);
+            // 计算返还金额
+            const refundAmount = returnAmount - itemAmount;
+
+            // 更新UI
+            elements.totalWeight.textContent = `${totalWeight.toFixed(2)} kg`;
+            elements.returnAmount.textContent = `¥${returnAmount.toFixed(2)}`;
+            elements.itemAmount.textContent = `¥${itemAmount.toFixed(2)}`;
+            elements.refundAmount.textContent = `¥${refundAmount.toFixed(2)}`;
+        }
+
+        // 添加回鱼记录
+        function addFishRecord() {
+            if (!data.currentSeat) return;
+
+            const weight = parseFloat(elements.fishWeight.value);
+            if (!weight || weight <= 0) {
+                alert('请输入有效的回鱼重量');
+                return;
+            }
+
+            const newRecord = {
+                id: generateId(),
+                weight,
+                time: new Date().toISOString()
+            };
+
+            data.currentSeat.fishRecords.push(newRecord);
+            elements.fishWeight.value = '';
+
+            // 更新金额信息
+            updateAmountInfo();
+        }
+
+        // 添加物品记录
+        function addItemRecord() {
+            if (!data.currentSeat) return;
+
+            const price = parseFloat(elements.itemPrice.value);
+            if (!price || price <= 0) {
+                alert('请输入有效的物品金额');
+                return;
+            }
+
+            const newRecord = {
+                id: generateId(),
+                price,
+                time: new Date().toISOString()
+            };
+
+            data.currentSeat.itemRecords.push(newRecord);
+            elements.itemPrice.value = '';
+
+            // 更新金额信息
+            updateAmountInfo();
+        }
+
+        // 查看记录
+        function viewRecords(type) {
+            if (!data.currentSeat) return;
+
+            elements.modalTitle.textContent = type === 'fish' ? '回鱼记录' : '物品记录';
+            elements.modalContent.innerHTML = '';
+
+            const records = type === 'fish' ? data.currentSeat.fishRecords : data.currentSeat.itemRecords;
+
+            if (records.length === 0) {
+                elements.modalContent.innerHTML = '<p class="text-center text-gray-500 py-4">暂无记录</p>';
+                elements.confirmDelete.classList.add('hidden');
+            } else {
+                records.forEach(record => {
+                    const recordItem = document.createElement('div');
+                    recordItem.className = 'flex justify-between items-center p-3 border-b border-gray-100 hover:bg-gray-50 transition-custom';
+                    recordItem.dataset.id = record.id;
+
+                    const value = type === 'fish' ? `${record.weight.toFixed(2)} kg` : `¥${record.price.toFixed(2)}`;
+                    const icon = type === 'fish' ? 'fa-fish text-primary' : 'fa-shopping-cart text-secondary';
+
+                    recordItem.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <i class="fa ${icon}"></i>
+                            <div>
+                                <p class="font-medium">${value}</p>
+                                <p class="text-xs text-gray-500">${formatDateTime(record.time)}</p>
+                            </div>
+                        </div>
+                    `;
+
+                    // 添加长按删除事件
+                    let pressTimer;
+                    recordItem.addEventListener('mousedown', () => {
+                        pressTimer = setTimeout(() => {
+                            // 高亮选中的记录
+                            document.querySelectorAll('#modal-content > div').forEach(item => {
+                                item.classList.remove('bg-primary/10');
+                            });
+                            recordItem.classList.add('bg-primary/10');
+
+                            // 显示删除按钮
+                            data.selectedRecordId = record.id;
+                            elements.confirmDelete.classList.remove('hidden');
+                        }, 1000);
+                    });
+
+                    recordItem.addEventListener('mouseup', () => {
+                        clearTimeout(pressTimer);
+                    });
+
+                    recordItem.addEventListener('mouseleave', () => {
+                        clearTimeout(pressTimer);
+                    });
+
+                    elements.modalContent.appendChild(recordItem);
+                });
+            }
+
+            elements.recordModal.classList.remove('hidden');
+        }
+
+        // 关闭弹窗
+        function closeModal() {
+            elements.recordModal.classList.add('hidden');
+            elements.confirmDelete.classList.add('hidden');
+            data.selectedRecordId = null;
+        }
+
+        // 确认删除记录
+        function confirmDeleteRecord() {
+            if (!data.currentSeat || !data.selectedRecordId) return;
+
+            // 判断是回鱼记录还是物品记录
+            const isFishRecord = elements.modalTitle.textContent === '回鱼记录';
+
+            if (isFishRecord) {
+                data.currentSeat.fishRecords = data.currentSeat.fishRecords.filter(record => record.id !== data.selectedRecordId);
+            } else {
+                data.currentSeat.itemRecords = data.currentSeat.itemRecords.filter(record => record.id !== data.selectedRecordId);
+            }
+
+            // 更新金额信息
+            updateAmountInfo();
+
+            // 重新渲染弹窗内容
+            viewRecords(isFishRecord ? 'fish' : 'item');
+        }
+
+        // 确认回鱼
+        function confirmReturnFish() {
+            if (!data.currentSeat) return;
+
+            // 将当前座位从预定移到历史
+            data.currentSeat.status = 'completed';
+            data.history.push({...data.currentSeat});
+            data.bookings = data.bookings.filter(booking => booking.id !== data.currentSeat.id);
+
+            // 返回首页
+            goBack();
+        }
+
+        // 编辑座位号
+        function editSeatNumber() {
+            if (!data.currentSeat) return;
+
+            const newSeatNumber = prompt('请输入新的座位号', data.currentSeat.seatNumber);
+            if (newSeatNumber === null) return;
+
+            const seatNumber = parseInt(newSeatNumber);
+            if (!seatNumber || seatNumber <= 0) {
+                alert('请输入有效的座位号');
+                return;
+            }
+
+            // 检查座位号是否已存在
+            const existingSeat = data.bookings.find(booking => booking.seatNumber === seatNumber && booking.id !== data.currentSeat.id);
+            if (existingSeat) {
+                alert('该座位号已存在');
+                return;
+            }
+
+            data.currentSeat.seatNumber = seatNumber;
+            elements.detailSeatNumber.textContent = seatNumber;
+        }
+
+        // 格式化日期时间
+        function formatDateTime(dateTimeString) {
+            const date = new Date(dateTimeString);
+            return `${date.getFullYear()}-${padZero(date.getMonth() + 1)}-${padZero(date.getDate())} ${padZero(date.getHours())}:${padZero(date.getMinutes())}`;
+        }
+
+        // 补零函数
+        function padZero(num) {
+            return num < 10 ? '0' + num : num;
+        }
+
+        // 事件监听
+        function setupEventListeners() {
+            // 首页事件
+            elements.addSeatBtn.addEventListener('click', createSeat);
+
+            // 详情页事件
+            elements.backBtn.addEventListener('click', goBack);
+            elements.editSeatBtn.addEventListener('click', editSeatNumber);
+            elements.addFishBtn.addEventListener('click', addFishRecord);
+            elements.addItemBtn.addEventListener('click', addItemRecord);
+            elements.viewFishBtn.addEventListener('click', () => viewRecords('fish'));
+            elements.viewItemBtn.addEventListener('click', () => viewRecords('item'));
+            elements.returnFishBtn.addEventListener('click', confirmReturnFish);
+
+            // 弹窗事件
+            elements.closeModal.addEventListener('click', closeModal);
+            elements.confirmDelete.addEventListener('click', confirmDeleteRecord);
+            elements.recordModal.addEventListener('click', (e) => {
+                if (e.target === elements.recordModal) {
+                    closeModal();
+                }
+            });
+
+            // 监听详情页输入变化
+            elements.detailStartTime.addEventListener('change', () => {
+                if (data.currentSeat) {
+                    data.currentSeat.startTime = elements.detailStartTime.value;
+                    // 重新计算结束时间
+                    const start = new Date(elements.detailStartTime.value);
+                    const duration = parseFloat(elements.detailDuration.value);
+                    const end = new Date(start.getTime() + duration * 60 * 60 * 1000);
+                    elements.detailEndTime.value = end.toISOString().slice(0, 16);
+                    data.currentSeat.endTime = elements.detailEndTime.value;
+                }
+            });
+
+            elements.detailDuration.addEventListener('change', () => {
+                if (data.currentSeat) {
+                    data.currentSeat.duration = parseFloat(elements.detailDuration.value);
+                    // 重新计算结束时间
+                    const start = new Date(elements.detailStartTime.value);
+                    const duration = parseFloat(elements.detailDuration.value);
+                    const end = new Date(start.getTime() + duration * 60 * 60 * 1000);
+                    elements.detailEndTime.value = end.toISOString().slice(0, 16);
+                    data.currentSeat.endTime = elements.detailEndTime.value;
+                }
+            });
+
+            elements.detailPaymentStatus.addEventListener('change', () => {
+                if (data.currentSeat) {
+                    data.currentSeat.paymentStatus = elements.detailPaymentStatus.value;
+                }
+            });
+        }
+
+        // 初始化
+        function init() {
+            initDateTime();
+            setupEventListeners();
+            renderBookingGrid();
+            renderHistoryGrid();
+        }
+
+        // 启动应用
+        init();
+    </script>
+</body>
+</html>
